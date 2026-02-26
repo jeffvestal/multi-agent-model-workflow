@@ -52,24 +52,27 @@ User: "something like Inception but funnier"
 ## Setup
 
 ```bash
-# 1. Create and activate a virtual environment
+# 1. Load the movie data
+#    Open Load_40k_movies.ipynb and run it to populate the movies-recall-demo index.
+
+# 2. Create and activate a virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# 2. Install dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 3. Configure credentials
+# 4. Configure credentials
 cp .env.example .env
 # Edit .env with your Elasticsearch URL and API key
 
-# 4. Provision the agent, tool, and workflow
+# 5. Provision the agent, tool, and workflow
 python setup.py
 
-# 5. (Optional) Run the workflow with a sample query
+# 6. (Optional) Run the workflow with a sample query
 python setup.py --run
 
-# 6. (Optional) Run with a custom query
+# 7. (Optional) Run with a custom query
 python setup.py --run --query "best sci-fi movies from the 90s"
 ```
 
@@ -113,6 +116,7 @@ No separate API keys. No provider-specific SDKs. Just swap the connector ID.
 
 | File | Description |
 |------|-------------|
+| `Load_40k_movies.ipynb` | Notebook to load ~40k movies into the `movies-recall-demo` index |
 | `workflow.yaml` | The workflow definition (also used by setup.py) |
 | `setup.py` | Provisions tool, agent, and workflow via Kibana APIs |
 | `.env.example` | Template for environment variables |
