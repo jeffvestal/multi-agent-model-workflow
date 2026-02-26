@@ -1,0 +1,75 @@
+version: "1"
+name: smart_movie_search
+description: >
+  Multi-model movie search pipeline. Demonstrates Elastic Inference Service (EIS)
+  with three different LLMs in a single workflow -- GPT-4.1 Mini for query expansion,
+  Gemini 2.5 Flash for semantic search, and Claude Sonnet 4.5 for creative writing.
+enabled: true
+
+triggers:
+  - type: manual
+
+inputs:
+  - name: query
+    type: string
+    required: true
+    description: "What kind of movie are you looking for?"
+
+steps:
+  # Step 1: Cheap/fast model expands the user's raw query into semantic variations
+  - name: expand_query
+    type: ai.agent
+    connector-id: "OpenAI-GPT-4-1-Mini"
+    with:
+      agent_id: "movie-search-agent"
+      message: |
+        You are a query expansion engine. Take the user's movie search query and
+        generate exactly 3 semantically different search variations that would help
+        find relevant movies. Each variation should approach the intent from a
+        different angle (genre, theme, mood, similar titles, etc.).
+
+        User query: {{ inputs.query }}
+
+        Return ONLY a JSON array of 3 strings, nothing else. Example format:
+        ["variation 1", "variation 2", "variation 3"]
+
+  # Step 2: Strong tool-use model searches the movie index with expanded queries
+  - name: search_movies
+    type: ai.agent
+    connector-id: "Google-Gemini-2-5-Flash"
+    with:
+      agent_id: "movie-search-agent"
+      message: |
+        You have access to a movie search tool. Use it to find movies matching these
+        search queries. Run a search for each query, then deduplicate and rank the
+        combined results.
+
+        Search queries:
+        {{ steps.expand_query.output.message }}
+
+        Return the top 5 unique movies. For each movie, provide:
+        - Title
+        - A one-sentence summary of why it matches
+        Format as a numbered list.
+
+  # Step 3: Premium creative model writes a polished recommendation
+  - name: recommend
+    type: ai.agent
+    connector-id: "Anthropic-Claude-Sonnet-4-5"
+    with:
+      agent_id: "movie-search-agent"
+      message: |
+        You are a movie critic writing a recommendation for a friend. Based on these
+        search results, write a short, engaging movie recommendation.
+
+        The user originally asked for: {{ inputs.query }}
+
+        Search results:
+        {{ steps.search_movies.output.message }}
+
+        Your recommendation should include:
+        1. A "top pick" with a compelling reason to watch it
+        2. A suggested viewing order if someone wants to watch all 5
+        3. A fun one-liner to close it out
+
+        Keep it concise and conversational -- no more than a few short paragraphs.
